@@ -1,0 +1,228 @@
+import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.ontology.OntTools;
+import com.hp.hpl.jena.ontology.OntTools.Path;
+//import static com.hp.hpl.jena.ontology.OntTools.findShortestPath;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+//import com.hp.hpl.jena.util.Filemanager;
+import com.hp.hpl.jena.util.iterator.Filter;
+      boolean  yoho = false;
+       int hops = 0;
+       OWLClass target;
+       Set <OWLClassExpression> al; 
+       
+       public  void FindJenaDistance() {
+
+        // Jena implementation 
+
+        long startTime = System.currentTimeMillis();
+        
+        // this file needs to be created by doing "Save As.." and "RDF/XML" for a 'normal' OWL file. Otherwise we get Jena parse errors
+        String inputFileName;
+   
+        inputFileName = module.getAbsolutePath();
+            System.out.println("filename "+inputFileName);
+    inputFileName = inputFileName.replace("\\", "/");
+    System.out.println("filename "+inputFileName);
+
+       // String ns = "http://www.ihtsdo.org/";
+
+        
+         
+        OntModel model = ModelFactory.createOntologyModel();
+        try{
+        InputStream in = new FileInputStream(module);
+         model.read(in, ""); 
+         //System.out.println("<< "+model.toString());
+         
+       
+        }
+        catch(Exception e){
+           e.toString();
+        }
+              
+        
+        System.out.format("Ontology load time: (%7.2f sec)%n%n", (System.currentTimeMillis() - startTime) / 1000.0);        
+
+        
+        OntClass fromSubClass = model.getOntClass("http://swan.mindinformatics.org/ontologies/1.2/collections/List");        
+        OntClass toSuperClass = model.getOntClass("http://swan.mindinformatics.org/ontologies/1.2/collections/Collection");
+
+        Path path = OntTools.findShortestPath(model, fromSubClass, toSuperClass, Filter.any);
+  
+        if (path != null){
+            int superClasses = 0;
+            for (Statement s: path) {
+                if (!(s.getObject().toString().startsWith("http://www.w3.org/2002/07/owl#Thing"))) {
+                    // filter out OWL Classes
+                    superClasses++;
+                    System.out.println(s.getObject());
+                }
+            }
+            System.out.println("Shortest distance from " + fromSubClass + " to " + toSuperClass + " = " + superClasses);
+        }else if (fromSubClass == toSuperClass){
+            System.out.println("Same node");
+        }else {
+            System.out.println("No path from " + fromSubClass + " to " + toSuperClass);
+        }   
+
+        System.out.format("\nProcessing time: (%7.2f sec)%n%n", (System.currentTimeMillis() - startTime) / 1000.0);
+
+    }
+   
+   private int getDistance(OWLClass b, OWLClass z) {
+ target = b;
+   hops = 0;
+   yoho=false;
+            while (yoho == false) {
+                // System.out.println("hh");
+                al = target.getSuperClasses(moduleOWL);
+                
+               if( !(al.isEmpty()) ){
+                for (OWLClassExpression supr : al) {
+                   
+                    if (supr.getClassExpressionType() == ClassExpressionType.OWL_CLASS && (!(b.isOWLThing()) && (!(z.isOWLThing())))) {
+                        target = supr.asOWLClass();
+                        hops++;
+                        if (target.equals(z)) {
+                          //  System.out.println("if1");
+                            yoho = true;
+                            break;
+                        } else if (target.getSuperClasses(moduleOWL).isEmpty()) {
+                          //  System.out.println("if2");
+                            yoho = true;
+                            break;
+                        }
+                           
+                        } else {
+                           // break;
+                           //System.out.println("if3");
+                           yoho=true;
+                           hops= -1;
+                           break;
+
+                    }
+                    }
+                }
+               
+               else{
+                   yoho=true;
+                           hops= -1;
+                           break;
+               }
+            }
+       // }
+        return hops;
+    }
+   public double intraModuleDistanceM(){
+      // Set <OWLAxiom> a = moduleOWL.getSubClassAxiomsForSubClass(null);
+  
+       Set <OWLClass> classes= moduleOWL.getClassesInSignature();
+       OWLClass temp = null;
+       for (OWLClassExpression oneclass : classes) {
+           
+           if(!(temp==null)  ){
+             //  if( !(oneclass.isOWLThing())){
+           //    System.out.println("not null");
+               System.out.println(oneclass+" -- "+temp);
+           int d= getDistance(temp,oneclass.asOWLClass());
+           
+           System.out.println("Distance between : "+oneclass+"  -- "+temp+ " is "+d);
+            //   }
+               
+            //   else{
+                   
+           //    }
+           
+           }
+           
+           else{
+            //   System.out.println("null");
+           }
+           temp = oneclass.asOWLClass();
+       //    System.out.println("tt "+temp);
+           
+       }
+       return 0;
+   }
+
+
+
+ /*
+       Set <OWLClass> c1 = ont.getClassesInSignature(true);
+       Set <OWLClass> c2 = mod.getClassesInSignature(true);
+       
+       Set <OWLObjectProperty> p1 = ont.getObjectPropertiesInSignature(true);
+       Set <OWLObjectProperty> p2 = mod.getObjectPropertiesInSignature(true); 
+       
+       Set <OWLDataProperty> d1 = ont.getDataPropertiesInSignature(true);
+       Set <OWLDataProperty> d2 = mod.getDataPropertiesInSignature(true); 
+       
+       for(OWLClass cla:c1){
+           Set <OWLClassExpression> ce = cla.getSuperClasses(ont);
+         
+            for(OWLClass clb:c2){
+                  Set <OWLClassExpression> ce2 = clb.getSuperClasses(mod);
+                  if (cla.equals(clb)){
+                      if(!(ce.equals(ce2))){
+                         comp=false; 
+                         key = cla;
+                     //    System.out.println("CLASS "+cla+" super1 "+ce+" super2 "+ce2);
+                      }
+                  }
+            }
+       }
+       
+             for(OWLClass cla:c1){
+           Set <OWLClassExpression> ce = cla.getEquivalentClasses(ont);
+            for(OWLClass clb:c2){
+                  Set <OWLClassExpression> ce2 = clb.getEquivalentClasses(mod);
+                  if (cla.equals(clb)){
+                      if(!(ce.equals(ce2))){
+                         comp=false; 
+                         key = cla;
+                         break;
+                        // System.out.println("CLASS "+cla+" eq1 "+ce+" eq2"+ce2);
+                      }
+                  }
+            }
+       }
+             
+                 for(OWLClass cla:c1){
+           Set <OWLClassExpression> ce = cla.getDisjointClasses(ont);
+            for(OWLClass clb:c2){
+                  Set <OWLClassExpression> ce2 = clb.getDisjointClasses(mod);
+                  if (cla.equals(clb)){
+                      if(!(ce.equals(ce2))){
+                         comp=false; 
+                         key = cla;
+                         break;
+                         //System.out.println("CLASS "+cla+" disj1 "+ce+" disj2"+ce2);
+                      }
+                  }
+            }
+       }
+       
+                    for(OWLClass cla:c1){
+                        
+           Set <OWLIndividual> ce = cla.getIndividuals(ont);
+            for(OWLClass clb:c2){
+                  Set <OWLIndividual> ce2 = clb.getIndividuals(mod);
+                  if (cla.equals(clb)){
+                      if(!(ce.equals(ce2))){
+                         comp=false; 
+                         key = cla;
+                         break;
+                       //  System.out.println("CLASS "+cla+" ind1 "+ce+" ind2"+ce2);
+                      }
+                  }
+            }
+       }
+                    
+         */ 

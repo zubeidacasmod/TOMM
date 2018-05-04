@@ -1,0 +1,4 @@
+start.proxyHost = sanren-proxy.meraka.csir.co.za 
+start.proxyPort = 3128
+start.proxyUser =
+start.proxyPassword =
